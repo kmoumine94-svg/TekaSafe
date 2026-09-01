@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: tekasafe-preproduction
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_SSL
+        value: "true"
+      - key: DATABASE_SSL_REJECT_UNAUTHORIZED
+        value: "true"
+      - key: DATABASE_PORT
+        value: "5432"
+      - key: DB_POOL_MAX
+        value: "10"
+      - key: DEMO_MODE
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: OTP_SECRET
+        generateValue: true
+      - key: ADMIN_PHONE_NUMBERS
+        sync: false

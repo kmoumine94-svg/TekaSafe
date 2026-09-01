@@ -1,0 +1,9 @@
+{
+  "name": "TekaSafe - Marketplace de confiance",
+  "short_name": "TekaSafe",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F8F7F2",
+  "theme_color": "#0B2E59",
+  "description": "Marketplace de confiance pour Kinshasa"
+}

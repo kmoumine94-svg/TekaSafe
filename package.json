@@ -1,0 +1,18 @@
+{
+  "name": "tekasafe-mvp",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "db:init": "node --env-file=.env scripts/db-init.mjs",
+    "setup:env": "node scripts/setup-env.mjs",
+    "db:password": "node scripts/set-db-password.mjs"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
+}
