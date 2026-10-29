@@ -3,7 +3,8 @@ import { readFile, access } from 'node:fs/promises';
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { closeDatabase, query } from './db.mjs';
+import { closeDatabase, query, withTransaction } from './db.mjs';
+import { createOrder, OrderError } from './orders.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4173);
@@ -302,22 +303,11 @@ const server = createServer(async (req, res) => {
       const user = await requireRole(req, res, ['buyer']);
       if (!user) return;
       const { items = [], payment = 'Mobile Money' } = await readJson(req);
-      const productIds = Array.isArray(items) ? items.map(item => Number(item.id)).filter(Number.isFinite) : [];
-      const productResult = await query('SELECT * FROM products WHERE id = ANY($1::bigint[])', [productIds]);
-      const products = productResult.rows.map(productFromRow);
-      if (!products.length) return send(res, 400, { error: 'Le panier est vide.' });
-      const total = products.reduce((sum, product) => sum + product.price, 0) + 10000;
-      const order = {
-        id: `TK-${randomUUID().slice(0, 8).toUpperCase()}`, userId: user.id,
-        items: products.map(product => ({ id: product.id, name: product.name, price: product.price })),
-        total, payment: safeText(payment, 40), status: 'Confirmée'
-      };
-      const result = await query(
-        `INSERT INTO orders (order_number, user_id, items, total_cdf, payment, status)
-         VALUES ($1, $2, $3::jsonb, $4, $5, $6) RETURNING *`,
-        [order.id, order.userId, JSON.stringify(order.items), order.total, order.payment, order.status]
-      );
-      return send(res, 201, { order: orderFromRow(result.rows[0]) });
+      if (!demoMode && payment === 'Mobile Money') {
+        return send(res, 503, { error: 'Le paiement Mobile Money n’est pas encore disponible. Choisissez le paiement à la livraison.' });
+      }
+      const order = await createOrder({ userId: user.id, items, payment }, withTransaction);
+      return send(res, 201, { order: orderFromRow(order) });
     }
 
     if (method === 'POST' && url.pathname === '/api/messages') {
@@ -346,6 +336,7 @@ const server = createServer(async (req, res) => {
 
     send(res, 404, { error: 'Ressource introuvable.' });
   } catch (error) {
+    if (error instanceof OrderError) return send(res, error.status, { error: error.message });
     console.error(error);
     const status = error instanceof SyntaxError ? 400 : 500;
     send(res, status, { error: status === 400 ? 'JSON invalide.' : 'Erreur serveur.', detail: process.env.NODE_ENV === 'development' ? error.message : undefined });

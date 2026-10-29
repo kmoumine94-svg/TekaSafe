@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "start": "node --env-file-if-exists=.env server.mjs",
     "db:init": "node --env-file=.env scripts/db-init.mjs",
     "setup:env": "node scripts/setup-env.mjs",

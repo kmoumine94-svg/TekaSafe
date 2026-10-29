@@ -2,9 +2,9 @@ services:
   - type: web
     name: tekasafe-preproduction
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm ci
-    startCommand: npm start
+    startCommand: node scripts/db-init.mjs && npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
